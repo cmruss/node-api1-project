@@ -5,7 +5,32 @@ const Hobbits = require('./data/db.js');
 
 const server = express();
 
+const cors =require('cors');
+
 server.use(express.json());
+
+server.use(cors());
+
+
+//POST
+server.post('/api/users', (req, res) => {
+    const { name, bio } = req.body;
+
+    if (!name || !bio) {
+        return res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
+    }
+    Hobbits.insert({ name, bio })
+        .then(id => {
+            Hobbits.findById(id)
+                .then(user => {
+                    res.status(201).json( user )
+                });
+        })
+        .catch(err => {
+            console.log(err)
+            res.status(500).json({ errorMessage: "There was an error while saving the user to the database" })
+        });
+});
 
 //GET
 server.get('/api/users', (req, res) => {
@@ -37,6 +62,24 @@ server.get('/api/users/:id', (req, res) => {
         });
 });
 
+//DELETE
+server.delete('/api/users/:id', (req, res) => {
+    const id = req.params.id;
+    const user = Hobbits.findById(id);
+
+    if (user) {
+        Hobbits.remove(id)
+            .then(() => 
+                res.status(200).json({ message: "Acoount deleted."}))
+            .catch(err => {
+                console.log(err)
+                res.status(500).json({ errorMessage: "The user could not be removed" })
+            });
+    } else {
+        res.status(404).json({ message: "The user with the specified ID does not exist." })
+    };
+});
+
 //PUT
 server.put('/api/users/:id', (req, res) => {
     const id = req.params.id
@@ -60,44 +103,6 @@ server.put('/api/users/:id', (req, res) => {
                 res.status(404).json({ message: "The user with the specified ID does not exist." })
         };
     });
-});
-
-//POST
-server.post('/api/users', (req, res) => {
-    const { name, bio } = req.body;
-
-    if (!name || !bio) {
-        return res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
-    }
-    Hobbits.insert({ name, bio })
-        .then(id => {
-            Hobbits.findById(id)
-                .then(user => {
-                    res.status(201).json( user )
-                });
-        })
-        .catch(err => {
-            console.log(err)
-            res.status(500).json({ errorMessage: "There was an error while saving the user to the database" })
-        });
-});
-
-//DELETE
-server.delete('/api/users/:id', (req, res) => {
-    const id = req.params.id;
-    const user = Hobbits.findById(id);
-
-    if (user) {
-        Hobbits.remove(id)
-            .then(() => 
-                res.status(200).json({ message: "Acoount deleted."}))
-            .catch(err => {
-                console.log(err)
-                res.status(500).json({ errorMessage: "The user could not be removed" })
-            });
-    } else {
-        res.status(404).json({ message: "The user with the specified ID does not exist." })
-    };
 });
 
 const port = 8000;
